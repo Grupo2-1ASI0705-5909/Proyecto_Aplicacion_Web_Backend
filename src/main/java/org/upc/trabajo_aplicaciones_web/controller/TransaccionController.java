@@ -6,7 +6,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 import org.upc.trabajo_aplicaciones_web.dto.TransaccionDTO;
+import org.upc.trabajo_aplicaciones_web.dto.UsuarioDTO;
 import org.upc.trabajo_aplicaciones_web.service.TransaccionService;
+import org.upc.trabajo_aplicaciones_web.service.UsuarioService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.List;
 
@@ -15,8 +19,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TransaccionController {
 
-    //actualizacion
+    // actualizacion
     private final TransaccionService transaccionService;
+    private final UsuarioService usuarioService;
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @GetMapping
@@ -25,9 +30,22 @@ public class TransaccionController {
         return ResponseEntity.ok(transacciones);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminar(@PathVariable Long id, Authentication authentication) {
+        // Validar propiedad
+        TransaccionDTO transaccion = transaccionService.obtenerPorId(id);
+        String currentEmail = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"));
+
+        // Si no es admin, debe ser el dueño (usuario origen)
+        if (!isAdmin) {
+            UsuarioDTO usuario = usuarioService.obtenerPorEmail(currentEmail);
+            if (!transaccion.getUsuarioId().equals(usuario.getUsuarioId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        }
+
         transaccionService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
@@ -55,21 +73,57 @@ public class TransaccionController {
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<TransaccionDTO>> obtenerPorUsuario(@PathVariable Long usuarioId) {
+    public ResponseEntity<List<TransaccionDTO>> obtenerPorUsuario(@PathVariable Long usuarioId,
+            Authentication authentication) {
+        // Validar que el usuario solicite sus propias transacciones
+        String currentEmail = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"));
+
+        if (!isAdmin) {
+            UsuarioDTO usuario = usuarioService.obtenerPorEmail(currentEmail);
+            if (!usuario.getUsuarioId().equals(usuarioId)) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        }
+
         List<TransaccionDTO> transacciones = transaccionService.obtenerPorUsuario(usuarioId);
         return ResponseEntity.ok(transacciones);
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
     @GetMapping("/usuario/{usuarioId}/total-fiat")
-    public ResponseEntity<Double> calcularTotalFiatPorUsuario(@PathVariable Long usuarioId) {
+    public ResponseEntity<Double> calcularTotalFiatPorUsuario(@PathVariable Long usuarioId,
+            Authentication authentication) {
+        // Validar propiedad
+        String currentEmail = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"));
+
+        if (!isAdmin) {
+            UsuarioDTO usuario = usuarioService.obtenerPorEmail(currentEmail);
+            if (!usuario.getUsuarioId().equals(usuarioId)) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        }
+
         Double total = transaccionService.calcularTotalFiatPorUsuario(usuarioId);
         return ResponseEntity.ok(total);
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
     @GetMapping("/usuario/{usuarioId}/total-cripto")
-    public ResponseEntity<Double> calcularTotalCriptoPorUsuario(@PathVariable Long usuarioId) {
+    public ResponseEntity<Double> calcularTotalCriptoPorUsuario(@PathVariable Long usuarioId,
+            Authentication authentication) {
+        // Validar propiedad
+        String currentEmail = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"));
+
+        if (!isAdmin) {
+            UsuarioDTO usuario = usuarioService.obtenerPorEmail(currentEmail);
+            if (!usuario.getUsuarioId().equals(usuarioId)) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        }
+
         Double total = transaccionService.calcularTotalCriptoPorUsuario(usuarioId);
         return ResponseEntity.ok(total);
     }
@@ -83,7 +137,8 @@ public class TransaccionController {
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COMERCIO')")
     @PutMapping("/{id}")
-    public ResponseEntity<TransaccionDTO> actualizar(@PathVariable Long id, @RequestBody TransaccionDTO transaccionDTO) {
+    public ResponseEntity<TransaccionDTO> actualizar(@PathVariable Long id,
+            @RequestBody TransaccionDTO transaccionDTO) {
         TransaccionDTO transaccionActualizada = transaccionService.actualizar(id, transaccionDTO);
         return ResponseEntity.ok(transaccionActualizada);
     }

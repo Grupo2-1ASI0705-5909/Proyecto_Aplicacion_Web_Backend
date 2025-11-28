@@ -1,4 +1,5 @@
 package org.upc.trabajo_aplicaciones_web.securities;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -38,35 +39,32 @@ public class SecurityConfig {
     @Qualifier("handlerExceptionResolver")
     private HandlerExceptionResolver exceptionResolver;
 
-
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-
 
     @Bean
     public static PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(jwtUserDetailsService).passwordEncoder(passwordEncoder());
     }
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))  ///modifique esto
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) /// modifique esto
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        //actualizacion de permisos para swagger
+                        // actualizacion de permisos para swagger
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -83,11 +81,11 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers("/auth/**", "/login").permitAll()
-                        .requestMatchers("/api/usuarios").permitAll()
+                        // .requestMatchers("/api/usuarios").permitAll() // REMOVED: Should be protected
 
                         // Antes tenías: .anyRequest().authenticated()
-                         //.anyRequest().permitAll()
-                        .anyRequest().authenticated() //modifique esto
+                        // .anyRequest().permitAll()
+                        .anyRequest().authenticated() // modifique esto
                 );
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);

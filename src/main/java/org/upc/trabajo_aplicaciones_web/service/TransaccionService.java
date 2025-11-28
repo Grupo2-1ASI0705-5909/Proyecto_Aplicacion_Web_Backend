@@ -1,6 +1,5 @@
 package org.upc.trabajo_aplicaciones_web.service;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import org.upc.trabajo_aplicaciones_web.dto.*;
@@ -10,7 +9,6 @@ import org.upc.trabajo_aplicaciones_web.repository.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -88,9 +86,13 @@ public class TransaccionService {
     }
 
     public void eliminar(Long id) {
-        if (!transaccionRepository.existsById(id)) {
-            throw new RuntimeException("Transacción no encontrada");
+        Transaccion transaccion = transaccionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transacción no encontrada"));
+
+        if (!"PENDIENTE".equalsIgnoreCase(transaccion.getEstado())) {
+            throw new RuntimeException("Solo se pueden eliminar transacciones pendientes");
         }
+
         transaccionRepository.deleteById(id);
     }
 
@@ -156,7 +158,6 @@ public class TransaccionService {
         return transaccionDTOs;
     }
 
-    // ✅ MÉTODO DE CONVERSIÓN MEJORADO - Incluye objetos anidados básicos
     private TransaccionDTO convertirATransaccionDTO(Transaccion transaccion) {
         TransaccionDTO dto = new TransaccionDTO();
         dto.setTransaccionId(transaccion.getTransaccionId());
@@ -171,7 +172,6 @@ public class TransaccionService {
         dto.setEstado(transaccion.getEstado());
         dto.setFechaTransaccion(transaccion.getFechaTransaccion());
 
-        // ✅ Incluir datos básicos del usuario (sin relaciones anidadas)
         UsuarioDTO usuarioDTO = new UsuarioDTO();
         usuarioDTO.setUsuarioId(transaccion.getUsuario().getUsuarioId());
         usuarioDTO.setNombre(transaccion.getUsuario().getNombre());
@@ -179,7 +179,6 @@ public class TransaccionService {
         usuarioDTO.setEmail(transaccion.getUsuario().getEmail());
         dto.setUsuario(usuarioDTO);
 
-        // ✅ Incluir datos básicos del comercio
         ComercioDTO comercioDTO = new ComercioDTO();
         comercioDTO.setComercioId(transaccion.getComercio().getComercioId());
         comercioDTO.setNombreComercial(transaccion.getComercio().getNombreComercial());
