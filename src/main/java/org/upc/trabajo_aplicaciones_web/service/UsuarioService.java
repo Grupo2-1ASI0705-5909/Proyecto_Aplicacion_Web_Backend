@@ -1,6 +1,7 @@
 package org.upc.trabajo_aplicaciones_web.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.upc.trabajo_aplicaciones_web.dto.RolDTO;
 import org.upc.trabajo_aplicaciones_web.dto.UsuarioDTO;
@@ -17,6 +18,7 @@ import java.util.List;
 public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UsuarioDTO crear(UsuarioDTO usuarioDTO) {
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
@@ -28,7 +30,7 @@ public class UsuarioService {
         usuario.setApellido(usuarioDTO.getApellido());
         usuario.setEmail(usuarioDTO.getEmail());
         usuario.setTelefono(usuarioDTO.getTelefono());
-        usuario.setPasswordHash(usuarioDTO.getPasswordHash());
+        usuario.setPasswordHash(passwordEncoder.encode(usuarioDTO.getPasswordHash()));
         usuario.setEstado(usuarioDTO.getEstado() != null ? usuarioDTO.getEstado() : true);
 
         if (usuarioDTO.getRolId() != null) {
@@ -131,7 +133,7 @@ public class UsuarioService {
         return usuarioDTOs;
     }
 
-     private UsuarioDTO convertirAUsuarioDTO(Usuario usuario) {
+    private UsuarioDTO convertirAUsuarioDTO(Usuario usuario) {
         UsuarioDTO dto = new UsuarioDTO();
         dto.setUsuarioId(usuario.getUsuarioId());
         dto.setNombre(usuario.getNombre());
