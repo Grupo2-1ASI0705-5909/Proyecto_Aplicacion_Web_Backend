@@ -86,7 +86,11 @@ public class SecurityConfig {
 
                         // Antes tenías: .anyRequest().authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
-                                // .anyRequest().permitAll()
+
+                        // TEMPORAL: Permitir endpoints de notificaciones (para debugging 401)
+                        .requestMatchers("/api/notificaciones/**").permitAll()
+
+                        // .anyRequest().permitAll()
                         .anyRequest().authenticated() // modifique esto
                 );
 

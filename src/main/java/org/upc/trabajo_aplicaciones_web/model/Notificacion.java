@@ -1,35 +1,42 @@
 package org.upc.trabajo_aplicaciones_web.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notificaciones")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "notificaciones")
 public class Notificacion {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "notificacionid")
     private Long notificacionId;
 
-    @ManyToOne
-    @JoinColumn(name = "usuarioid", nullable = false)
-    private Usuario usuario;
-
-    @Column(nullable = false, length = 100)
-    private String titulo;
-
-    @Column(nullable = false, length = 300)
-    private String mensaje;
-
-    @Column(nullable = false, name = "fechaenvio")
-    private LocalDateTime fechaEnvio = LocalDateTime.now();
+    @Column(name = "usuario_id", nullable = false)
+    private Long usuarioId;
 
     @Column(nullable = false)
-    private Boolean leido = false;
+    private String titulo;
 
-    public void marcarComoLeido() {
-        this.leido = true;
+    @Column(nullable = false)
+    private String mensaje;
+
+    @Column(name = "fecha_envio")
+    private LocalDateTime fechaEnvio;
+
+    @Column(nullable = false)
+    private boolean leido = false;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.fechaEnvio == null) {
+            this.fechaEnvio = LocalDateTime.now();
+        }
     }
 }

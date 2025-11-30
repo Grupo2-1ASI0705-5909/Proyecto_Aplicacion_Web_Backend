@@ -1,96 +1,73 @@
 package org.upc.trabajo_aplicaciones_web.controller;
 
+import org.upc.trabajo_aplicaciones_web.model.Notificacion;
+import org.upc.trabajo_aplicaciones_web.service.NotificacionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
-import org.upc.trabajo_aplicaciones_web.dto.NotificacionDTO;
-import org.upc.trabajo_aplicaciones_web.service.NotificacionService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/notificaciones")
-@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class NotificacionController {
 
-    private final NotificacionService notificacionService;
+    @Autowired
+    private NotificacionService notificacionService;
 
-    //David NotificacionController
-
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    // Crear notificación
     @PostMapping
-    public ResponseEntity<NotificacionDTO> crear(@RequestBody NotificacionDTO notificacionDTO) {
-        NotificacionDTO nuevaNotificacion = notificacionService.crear(notificacionDTO);
-        return new ResponseEntity<>(nuevaNotificacion, HttpStatus.CREATED);
+    public ResponseEntity<Notificacion> crear(@RequestBody Notificacion notificacion) {
+        return new ResponseEntity<>(notificacionService.crear(notificacion), HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    // Obtener TODAS las notificaciones (para administradores)
     @GetMapping
-    public ResponseEntity<List<NotificacionDTO>> obtenerTodos() {
-        List<NotificacionDTO> notificaciones = notificacionService.obtenerTodos();
-        return ResponseEntity.ok(notificaciones);
+    public ResponseEntity<List<Notificacion>> obtenerTodas() {
+        return new ResponseEntity<>(notificacionService.obtenerTodas(), HttpStatus.OK);
     }
-    @PreAuthorize("hasAnyRole('USUARIO', 'ADMINISTRADOR')")
-    @GetMapping("/{id}")
-    public ResponseEntity<NotificacionDTO> obtenerPorId(@PathVariable Long id) {
-        NotificacionDTO notificacion = notificacionService.obtenerPorId(id);
-        return ResponseEntity.ok(notificacion);
-    }
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @PutMapping("/{id}")
-    public ResponseEntity<NotificacionDTO> actualizar(@PathVariable Long id, @RequestBody NotificacionDTO notificacionDTO) {
-        NotificacionDTO notificacionActualizada = notificacionService.actualizar(id, notificacionDTO);
-        return ResponseEntity.ok(notificacionActualizada);
-    }
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        notificacionService.eliminar(id);
-        return ResponseEntity.noContent().build();
-    }
-    @PreAuthorize("hasAnyRole('USUARIO', 'ADMINISTRADOR')")
-    @PatchMapping("/{id}/leer")
-    public ResponseEntity<NotificacionDTO> marcarComoLeida(@PathVariable Long id) {
-        NotificacionDTO notificacion = notificacionService.marcarComoLeida(id);
-        return ResponseEntity.ok(notificacion);
-    }
-    @PreAuthorize("hasAnyRole('USUARIO', 'ADMINISTRADOR')")
+
+    // Obtener notificaciones por usuario
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<NotificacionDTO>> obtenerPorUsuario(@PathVariable Long usuarioId) {
-        List<NotificacionDTO> notificaciones = notificacionService.obtenerPorUsuario(usuarioId);
-        return ResponseEntity.ok(notificaciones);
+    public ResponseEntity<List<Notificacion>> obtenerPorUsuario(@PathVariable Long usuarioId) {
+        return new ResponseEntity<>(notificacionService.obtenerPorUsuario(usuarioId), HttpStatus.OK);
     }
-    @PreAuthorize("hasAnyRole('USUARIO', 'ADMINISTRADOR')")
+
+    // Obtener notificaciones no leídas por usuario
     @GetMapping("/usuario/{usuarioId}/no-leidas")
-    public ResponseEntity<List<NotificacionDTO>> obtenerNoLeidasPorUsuario(@PathVariable Long usuarioId) {
-        List<NotificacionDTO> notificaciones = notificacionService.obtenerNoLeidasPorUsuario(usuarioId);
-        return ResponseEntity.ok(notificaciones);
+    public ResponseEntity<List<Notificacion>> obtenerNoLeidas(@PathVariable Long usuarioId) {
+        return new ResponseEntity<>(notificacionService.obtenerNoLeidas(usuarioId), HttpStatus.OK);
     }
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @GetMapping("/recientes")
-    public ResponseEntity<List<NotificacionDTO>> obtenerRecientes() {
-        List<NotificacionDTO> notificaciones = notificacionService.obtenerRecientes();
-        return ResponseEntity.ok(notificaciones);
+
+    // Contar notificaciones no leídas por usuario
+    @GetMapping("/usuario/{usuarioId}/contar-no-leidas")
+    public ResponseEntity<Long> contarNoLeidas(@PathVariable Long usuarioId) {
+        return new ResponseEntity<>(notificacionService.contarNoLeidas(usuarioId), HttpStatus.OK);
     }
-    @PreAuthorize("hasAnyRole('USUARIO', 'ADMINISTRADOR')")
+
+    // Marcar una notificación como leída
+    @PatchMapping("/{id}/leer")
+    public ResponseEntity<Notificacion> marcarComoLeida(@PathVariable Long id) {
+        Notificacion notificacion = notificacionService.marcarComoLeida(id);
+        if (notificacion != null) {
+            return new ResponseEntity<>(notificacion, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    // Marcar todas las notificaciones de un usuario como leídas
     @PatchMapping("/usuario/{usuarioId}/marcar-todas-leidas")
     public ResponseEntity<Void> marcarTodasComoLeidas(@PathVariable Long usuarioId) {
         notificacionService.marcarTodasComoLeidas(usuarioId);
-        return ResponseEntity.ok().build();
-    }
-    @PreAuthorize("hasAnyRole('USUARIO', 'ADMINISTRADOR')")
-    @GetMapping("/usuario/{usuarioId}/contar-no-leidas")
-    public ResponseEntity<Long> contarNoLeidasPorUsuario(@PathVariable Long usuarioId) {
-        long cantidad = notificacionService.contarNoLeidasPorUsuario(usuarioId);
-        return ResponseEntity.ok(cantidad);
-    }
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @GetMapping("/tipo/{tipo}")
-    public ResponseEntity<List<NotificacionDTO>> obtenerPorTipo(@PathVariable String tipo) {
-        List<NotificacionDTO> notificaciones = notificacionService.obtenerPorTipo(tipo);
-        return ResponseEntity.ok(notificaciones);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    // Eliminar notificación
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        notificacionService.eliminar(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 }

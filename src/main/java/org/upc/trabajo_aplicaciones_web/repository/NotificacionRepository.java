@@ -1,41 +1,25 @@
 package org.upc.trabajo_aplicaciones_web.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 import org.upc.trabajo_aplicaciones_web.model.Notificacion;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {
 
-    // Buscar por usuario
-    List<Notificacion> findByUsuarioUsuarioId(Long usuarioId);
+    List<Notificacion> findByUsuarioIdOrderByFechaEnvioDesc(Long usuarioId);
 
-    // Buscar por estado de lectura
-    List<Notificacion> findByLeido(Boolean leido);
+    List<Notificacion> findByUsuarioIdAndLeidoFalseOrderByFechaEnvioDesc(Long usuarioId);
 
-    // Buscar notificaciones no leídas por usuario
-    List<Notificacion> findByUsuarioUsuarioIdAndLeidoFalse(Long usuarioId);
+    long countByUsuarioIdAndLeidoFalse(Long usuarioId);
 
-    // Buscar notificaciones recientes (últimos 7 días)
-    @Query("SELECT n FROM Notificacion n WHERE n.fechaEnvio >= :fecha")
-    List<Notificacion> findNotificacionesRecientes(@Param("fecha") LocalDateTime fecha);
-
-    // Buscar por rango de fechas
-    List<Notificacion> findByFechaEnvioBetween(LocalDateTime fechaInicio, LocalDateTime fechaFin);
-
-    // Contar notificaciones no leídas por usuario
-    long countByUsuarioUsuarioIdAndLeidoFalse(Long usuarioId);
-
-    // Marcar notificaciones como leídas
-    @Query("UPDATE Notificacion n SET n.leido = true WHERE n.usuario.usuarioId = :usuarioId AND n.leido = false")
-    void marcarComoLeidas(@Param("usuarioId") Long usuarioId);
-
-    // Notificaciones por tipo (basado en título)
-    @Query("SELECT n FROM Notificacion n WHERE n.titulo LIKE %:tipo%")
-    List<Notificacion> findByTipo(@Param("tipo") String tipo);
+    @Modifying
+    @Transactional
+    @Query("UPDATE Notificacion n SET n.leido = true WHERE n.usuarioId = :usuarioId")
+    void marcarTodasComoLeidas(Long usuarioId);
 }
