@@ -21,6 +21,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -84,7 +85,8 @@ public class SecurityConfig {
                         // .requestMatchers("/api/usuarios").permitAll() // REMOVED: Should be protected
 
                         // Antes tenías: .anyRequest().authenticated()
-                        // .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
+                                // .anyRequest().permitAll()
                         .anyRequest().authenticated() // modifique esto
                 );
 

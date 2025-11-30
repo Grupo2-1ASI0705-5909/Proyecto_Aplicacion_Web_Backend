@@ -23,7 +23,7 @@ public class TransaccionController {
     private final TransaccionService transaccionService;
     private final UsuarioService usuarioService;
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','USUARIO')")
     @GetMapping
     public ResponseEntity<List<TransaccionDTO>> obtenerTodos() {
         List<TransaccionDTO> transacciones = transaccionService.obtenerTodos();
@@ -50,24 +50,30 @@ public class TransaccionController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','USUARIO')")
     @GetMapping("/cripto")
     public ResponseEntity<List<TransaccionDTO>> obtenerTransaccionesConCripto() {
         List<TransaccionDTO> transacciones = transaccionService.obtenerTransaccionesConCripto();
         return ResponseEntity.ok(transacciones);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','USUARIO')")
     @GetMapping("/recientes")
     public ResponseEntity<List<TransaccionDTO>> obtenerRecientes() {
         List<TransaccionDTO> transacciones = transaccionService.obtenerRecientes();
         return ResponseEntity.ok(transacciones);
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
+    @PreAuthorize("hasAnyAuthority('ADMINISTRADOR', 'ROLE_ADMINISTRADOR', 'USUARIO', 'ROLE_USUARIO', 'CLIENTE')")
     @PostMapping
-    public ResponseEntity<TransaccionDTO> crear(@RequestBody TransaccionDTO transaccionDTO) {
-        TransaccionDTO nuevaTransaccion = transaccionService.crear(transaccionDTO);
+    public ResponseEntity<TransaccionDTO> crear(@RequestBody TransaccionDTO transaccionDTO, Authentication authentication) { // <--- Agregamos Authentication
+
+        // Obtenemos el email del usuario logueado (TOKEN)
+        String email = authentication.getName();
+
+        // Pasamos el email al servicio en lugar de confiar solo en el DTO
+        TransaccionDTO nuevaTransaccion = transaccionService.crear(transaccionDTO, email);
+
         return new ResponseEntity<>(nuevaTransaccion, HttpStatus.CREATED);
     }
 

@@ -61,14 +61,14 @@ public class CriptomonedaController {
         return ResponseEntity.ok(cripto);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("has('ADMINISTRADOR')")
     @GetMapping("/codigo/{codigo}")
     public ResponseEntity<CriptomonedaDTO> obtenerPorCodigo(@PathVariable String codigo) {
         CriptomonedaDTO cripto = criptomonedaService.obtenerPorCodigo(codigo);
         return ResponseEntity.ok(cripto);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','USUARIO')")
     @GetMapping("/activas")
     public ResponseEntity<List<CriptomonedaDTO>> obtenerActivas() {
         List<CriptomonedaDTO> criptos = criptomonedaService.obtenerActivas();

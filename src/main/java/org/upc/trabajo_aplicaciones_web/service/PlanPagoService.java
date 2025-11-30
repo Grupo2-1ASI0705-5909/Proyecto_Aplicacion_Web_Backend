@@ -2,14 +2,18 @@ package org.upc.trabajo_aplicaciones_web.service;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.upc.trabajo_aplicaciones_web.dto.PlanPagoDTO;
 import org.upc.trabajo_aplicaciones_web.dto.TransaccionDTO;
+import org.upc.trabajo_aplicaciones_web.model.Cuota;
 import org.upc.trabajo_aplicaciones_web.model.PlanPago;
 import org.upc.trabajo_aplicaciones_web.model.Transaccion;
+import org.upc.trabajo_aplicaciones_web.repository.CuotaRepository;
 import org.upc.trabajo_aplicaciones_web.repository.PlanPagoRepository;
 import org.upc.trabajo_aplicaciones_web.repository.TransaccionRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +24,9 @@ import java.util.stream.Collectors;
 public class PlanPagoService {
     private final PlanPagoRepository planPagoRepository;
     private final TransaccionRepository transaccionRepository;
+    private final CuotaRepository cuotaRepository; // NUEVO: Para crear cuotas
 
+    @Transactional // IMPORTANTE: Asegurar transaccionalidad
     public PlanPagoDTO crear(PlanPagoDTO planPagoDTO) {
         Transaccion transaccion = transaccionRepository.findById(planPagoDTO.getTransaccionId())
                 .orElseThrow(() -> new RuntimeException("Transacción no encontrada"));
@@ -36,7 +42,27 @@ public class PlanPagoService {
             planPago.setFechaFin(planPago.getFechaInicio().plusMonths(planPago.getNumeroCuotas()));
         }
 
+        // Guardar primero el plan para obtener su ID
         planPago = planPagoRepository.save(planPago);
+
+        // LÓGICA DE GENERACIÓN DE CUOTAS (NUEVO)
+        BigDecimal montoPorCuota = planPago.getMontoPorCuota();
+        LocalDate fechaVencimientoBase = planPago.getFechaInicio();
+
+        List<Cuota> cuotasGeneradas = new ArrayList<>();
+        for (int i = 1; i <= planPago.getNumeroCuotas(); i++) {
+            Cuota cuota = new Cuota();
+            cuota.setPlanPago(planPago);
+            cuota.setNumeroCuota(i);
+            cuota.setMonto(montoPorCuota);
+            cuota.setFechaVencimiento(fechaVencimientoBase.plusMonths(i)); // Vence al mes siguiente
+            cuota.setEstado("PENDIENTE");
+            cuotasGeneradas.add(cuota);
+        }
+
+        // Guardar todas las cuotas generadas
+        cuotaRepository.saveAll(cuotasGeneradas);
+
         return convertirAPlanPagoDTO(planPago);
     }
 

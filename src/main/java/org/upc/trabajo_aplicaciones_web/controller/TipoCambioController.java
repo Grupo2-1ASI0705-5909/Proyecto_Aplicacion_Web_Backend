@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tipos-cambio")
 @RequiredArgsConstructor
-//actualizado
+// actualizado
 public class TipoCambioController {
 
     private final TipoCambioService tipoCambioService;
@@ -33,7 +33,7 @@ public class TipoCambioController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @GetMapping("/promedio")
     public ResponseEntity<Double> calcularPromedioTasas(
             @RequestParam String desde,
@@ -44,35 +44,37 @@ public class TipoCambioController {
         return ResponseEntity.ok(promedio);
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COMERCIO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @GetMapping("/historial")
-    public ResponseEntity<List<TipoCambioDTO>> obtenerHistorialTasas(@RequestParam String desde, @RequestParam String hasta) {
+    public ResponseEntity<List<TipoCambioDTO>> obtenerHistorialTasas(@RequestParam String desde,
+            @RequestParam String hasta) {
         List<TipoCambioDTO> tiposCambio = tipoCambioService.obtenerHistorialTasas(desde, hasta);
         return ResponseEntity.ok(tiposCambio);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @GetMapping
     public ResponseEntity<List<TipoCambioDTO>> obtenerTodos() {
         List<TipoCambioDTO> tiposCambio = tipoCambioService.obtenerTodos();
         return ResponseEntity.ok(tiposCambio);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @GetMapping("/{id}")
     public ResponseEntity<TipoCambioDTO> obtenerPorId(@PathVariable Long id) {
         TipoCambioDTO tipoCambio = tipoCambioService.obtenerPorId(id);
         return ResponseEntity.ok(tipoCambio);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @GetMapping("/tasa-actual")
-    public ResponseEntity<TipoCambioDTO> obtenerTasaMasReciente(@RequestParam String desde, @RequestParam String hasta) {
+    public ResponseEntity<TipoCambioDTO> obtenerTasaMasReciente(@RequestParam String desde,
+            @RequestParam String hasta) {
         TipoCambioDTO tipoCambio = tipoCambioService.obtenerTasaMasReciente(desde, hasta);
         return ResponseEntity.ok(tipoCambio);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @GetMapping("/tasas-recientes")
     public ResponseEntity<List<TipoCambioDTO>> obtenerTasasMasRecientes() {
         List<TipoCambioDTO> tiposCambio = tipoCambioService.obtenerTasasMasRecientes();

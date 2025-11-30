@@ -25,7 +25,7 @@ public class WalletController {
         return ResponseEntity.ok(wallets);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','USUARIO')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         walletService.eliminar(id);
@@ -53,7 +53,7 @@ public class WalletController {
         return ResponseEntity.ok(wallets);
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO','CLIENTE')")
     @PostMapping
     public ResponseEntity<WalletDTO> crear(@RequestBody WalletDTO walletDTO) {
         WalletDTO nuevoWallet = walletService.crear(walletDTO);

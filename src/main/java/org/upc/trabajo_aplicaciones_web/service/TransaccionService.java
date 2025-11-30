@@ -19,10 +19,19 @@ public class TransaccionService {
     private final MetodoPagoRepository metodoPagoRepository;
     private final CriptomonedaRepository criptomonedaRepository;
     private final TipoCambioRepository tipoCambioRepository;
+    private final TipoCambioService tipoCambioService; // NUEVO: Inyectar servicio para obtener tasas
 
-    public TransaccionDTO crear(TransaccionDTO transaccionDTO) {
-        Usuario usuario = usuarioRepository.findById(transaccionDTO.getUsuarioId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    public TransaccionDTO crear(TransaccionDTO transaccionDTO, String emailUsuario) {
+
+        // CORRECCIÓN AQUÍ: Usamos la variable 'emailUsuario' que viene del Controller
+        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + emailUsuario));
+
+        // Validación por si el repositorio devuelve null (o si usas Optional, ajústalo)
+        if (usuario == null) {
+            // Opción B: Si tu repositorio devuelve Optional, usa .orElseThrow(...)
+            throw new RuntimeException("Usuario no encontrado para el email: " + emailUsuario);
+        }
 
         Comercio comercio = comercioRepository.findById(transaccionDTO.getComercioId())
                 .orElseThrow(() -> new RuntimeException("Comercio no encontrado"));
@@ -30,30 +39,52 @@ public class TransaccionService {
         MetodoPago metodoPago = metodoPagoRepository.findById(transaccionDTO.getMetodoPagoId())
                 .orElseThrow(() -> new RuntimeException("Método de pago no encontrado"));
 
+        // 1. OBTENER DATOS CRÍTICOS DE LA CRIPTOMONEDA
+        Criptomoneda criptomoneda = criptomonedaRepository.findById(transaccionDTO.getCriptoId())
+                .orElseThrow(() -> new RuntimeException("Criptomoneda no encontrada"));
+
+        // 2. BUSCAR TASA ACTUAL SEGURA
+        // Usamos un valor por defecto seguro si viene null
+        String codigoMoneda = transaccionDTO.getCodigoMoneda() != null ? transaccionDTO.getCodigoMoneda() : "USD";
+
+        TipoCambioDTO tipoCambioDTO = tipoCambioService.obtenerTasaMasReciente(
+                criptomoneda.getCodigo(),
+                codigoMoneda);
+
+        TipoCambio tipoCambio = tipoCambioRepository.findById(tipoCambioDTO.getTipoCambioId())
+                .orElseThrow(() -> new RuntimeException("Tipo de cambio no encontrado"));
+
+        // 3. CALCULAR MONTOS EN EL BACKEND
+        java.math.BigDecimal tasa = tipoCambio.getTasa();
+        java.math.BigDecimal montoTotalFiat = transaccionDTO.getMontoTotalFiat();
+
+        // División segura para evitar errores de decimales infinitos
+        java.math.BigDecimal montoTotalCripto = montoTotalFiat.divide(
+                tasa,
+                criptomoneda.getDecimales(), // Asegúrate que tu entidad Cripto tenga este campo, si no usa 8
+                java.math.RoundingMode.HALF_UP);
+
+        // 4. CREAR Y ASIGNAR VALORES
         Transaccion transaccion = new Transaccion();
         transaccion.setUsuario(usuario);
         transaccion.setComercio(comercio);
         transaccion.setMetodoPago(metodoPago);
-        transaccion.setCodigoMoneda(transaccionDTO.getCodigoMoneda());
-        transaccion.setMontoTotalFiat(transaccionDTO.getMontoTotalFiat());
-        transaccion.setMontoTotalCripto(transaccionDTO.getMontoTotalCripto());
-        transaccion.setTasaAplicada(transaccionDTO.getTasaAplicada());
-        transaccion.setTxHash(transaccionDTO.getTxHash());
+
+        // 5. ASIGNAR VALORES CALCULADOS
+        transaccion.setCriptomoneda(criptomoneda);
+        transaccion.setTipoCambio(tipoCambio);
+        transaccion.setCodigoMoneda(codigoMoneda);
+        transaccion.setMontoTotalFiat(montoTotalFiat);
+        transaccion.setMontoTotalCripto(montoTotalCripto);
+        transaccion.setTasaAplicada(tasa);
+
+        // Otros campos
+        transaccion.setTxHash(transaccionDTO.getTxHash() != null ? transaccionDTO.getTxHash() : "GENERATED_BY_BACKEND");
         transaccion.setEstado(transaccionDTO.getEstado() != null ? transaccionDTO.getEstado() : "PENDIENTE");
 
-        if (transaccionDTO.getCriptoId() != null) {
-            Criptomoneda criptomoneda = criptomonedaRepository.findById(transaccionDTO.getCriptoId())
-                    .orElseThrow(() -> new RuntimeException("Criptomoneda no encontrada"));
-            transaccion.setCriptomoneda(criptomoneda);
-        }
-
-        if (transaccionDTO.getTipoCambioId() != null) {
-            TipoCambio tipoCambio = tipoCambioRepository.findById(transaccionDTO.getTipoCambioId())
-                    .orElseThrow(() -> new RuntimeException("Tipo de cambio no encontrado"));
-            transaccion.setTipoCambio(tipoCambio);
-        }
-
         transaccion = transaccionRepository.save(transaccion);
+
+        // Asegúrate de tener este método auxiliar o usar un Mapper
         return convertirATransaccionDTO(transaccion);
     }
 

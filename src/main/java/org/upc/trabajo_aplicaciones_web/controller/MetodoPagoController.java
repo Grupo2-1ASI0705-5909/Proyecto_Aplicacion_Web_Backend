@@ -68,7 +68,7 @@ public class MetodoPagoController {
         return ResponseEntity.ok(metodo);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','USUARIO')")
     @GetMapping("/activos")
     public ResponseEntity<List<MetodoPagoDTO>> obtenerActivos() {
         List<MetodoPagoDTO> metodos = metodoPagoService.obtenerActivos();

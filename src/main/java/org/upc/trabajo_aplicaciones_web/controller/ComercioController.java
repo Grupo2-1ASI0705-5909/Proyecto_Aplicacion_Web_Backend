@@ -87,7 +87,7 @@ public class ComercioController {
         return ResponseEntity.ok(comercios);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','USUARIO')")
     @GetMapping("/activos")
     public ResponseEntity<List<ComercioDTO>> obtenerActivos() {
         List<ComercioDTO> comercios = comercioService.obtenerActivos();
