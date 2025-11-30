@@ -84,9 +84,6 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**", "/login").permitAll()
                         // .requestMatchers("/api/usuarios").permitAll() // REMOVED: Should be protected
 
-                        // TEMPORAL: Debug endpoints (REMOVE IN PRODUCTION)
-                        .requestMatchers("/api/debug/**").permitAll()
-
                         // Antes tenías: .anyRequest().authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
 
