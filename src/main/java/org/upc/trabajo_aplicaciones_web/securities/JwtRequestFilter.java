@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtRequestFilter.class);
@@ -53,21 +54,28 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         // Si obtuvimos username y todavía no hay autenticación en el contexto
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
+            try {
+                Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
 
-            // Recuperamos los roles desde el claim "roles"
-            List<String> roles = claims.get("roles", List.class);
+                // Recuperamos los roles desde el claim "roles"
+                List<String> roles = claims.get("roles", List.class);
 
-            Collection<? extends GrantedAuthority> authorities = roles.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
+                Collection<? extends GrantedAuthority> authorities = roles.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList());
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(username, null, authorities);
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username,
+                        null, authorities);
 
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                logger.info("✅ Token JWT validado exitosamente para usuario: {}", username);
+            } catch (Exception e) {
+                logger.error("❌ Error al validar el token JWT para usuario: {}. Error: {}", username, e.getMessage(),
+                        e);
+            }
         }
         chain.doFilter(request, response);
     }
