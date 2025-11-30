@@ -87,13 +87,10 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @GetMapping("/email/{email}")
     public ResponseEntity<UsuarioDTO> obtenerPorEmail(@PathVariable String email, Authentication authentication) {
-        // Validar que sea el propio usuario o un admin
-        String currentEmail = authentication.getName();
-        boolean isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMINISTRADOR"));
-
-        if (!isAdmin && !currentEmail.equals(email)) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
+        // Validacion eliminada para permitir busqueda P2P
+        // if (!isAdmin && !currentEmail.equals(email)) {
+        // return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        // }
 
         UsuarioDTO usuario = usuarioService.obtenerPorEmail(email);
         return ResponseEntity.ok(usuario);

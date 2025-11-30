@@ -52,7 +52,7 @@ public class ComercioController {
         return ResponseEntity.ok(comercios);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','USUARIO')")
     @GetMapping
     public ResponseEntity<List<ComercioDTO>> obtenerTodos() {
         List<ComercioDTO> comercios = comercioService.obtenerTodos();

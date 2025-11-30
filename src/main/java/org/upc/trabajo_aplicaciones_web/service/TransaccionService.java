@@ -6,6 +6,7 @@ import org.upc.trabajo_aplicaciones_web.dto.*;
 import org.upc.trabajo_aplicaciones_web.model.*;
 import org.upc.trabajo_aplicaciones_web.repository.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,8 @@ public class TransaccionService {
     private final MetodoPagoRepository metodoPagoRepository;
     private final CriptomonedaRepository criptomonedaRepository;
     private final TipoCambioRepository tipoCambioRepository;
-    private final TipoCambioService tipoCambioService; // NUEVO: Inyectar servicio para obtener tasas
+    private final TipoCambioService tipoCambioService;
+    private final WalletRepository walletRepository; // ✅ INYECTADO PARA ACTUALIZAR SALDOS
 
     public TransaccionDTO crear(TransaccionDTO transaccionDTO, String emailUsuario) {
 
@@ -64,13 +66,51 @@ public class TransaccionService {
                 criptomoneda.getDecimales(), // Asegúrate que tu entidad Cripto tenga este campo, si no usa 8
                 java.math.RoundingMode.HALF_UP);
 
-        // 4. CREAR Y ASIGNAR VALORES
+        // =====================================================================
+        // 🔥 LÓGICA DE NEGOCIO CRÍTICA: DESCONTAR SALDO DE LA WALLET
+        // =====================================================================
+
+        // 4. BUSCAR LA WALLET DEL USUARIO PARA ESTA CRIPTOMONEDA
+        Wallet walletUsuario = walletRepository.findByUsuarioUsuarioIdAndCriptomonedaCriptoId(
+                usuario.getUsuarioId(),
+                criptomoneda.getCriptoId())
+                .orElseThrow(() -> new RuntimeException(
+                        "El usuario no tiene una wallet para la criptomoneda: " + criptomoneda.getCodigo()));
+
+        // 5. VALIDAR QUE EL USUARIO TENGA SALDO SUFICIENTE
+        if (walletUsuario.getSaldo().compareTo(montoTotalCripto) < 0) {
+            throw new RuntimeException(String.format(
+                    "Saldo insuficiente. Necesitas %s %s pero solo tienes %s %s",
+                    montoTotalCripto.toPlainString(),
+                    criptomoneda.getCodigo(),
+                    walletUsuario.getSaldo().toPlainString(),
+                    criptomoneda.getCodigo()));
+        }
+
+        // 6. DESCONTAR EL SALDO DE LA WALLET
+        BigDecimal nuevoSaldo = walletUsuario.getSaldo().subtract(montoTotalCripto);
+
+        // Log para debugging (puedes quitar esto en producción)
+        System.out.println("💰 ==================== DESCUENTO DE SALDO ====================");
+        System.out.println("   Usuario: " + usuario.getEmail());
+        System.out.println("   Criptomoneda: " + criptomoneda.getCodigo());
+        System.out.println("   Saldo anterior: " + walletUsuario.getSaldo().toPlainString());
+        System.out.println("   Monto a descontar: " + montoTotalCripto.toPlainString());
+        System.out.println("   Nuevo saldo: " + nuevoSaldo.toPlainString());
+        System.out.println("=============================================================");
+
+        // Actualizar saldo en la wallet
+        walletUsuario.setSaldo(nuevoSaldo);
+        walletUsuario.setUltimaActualizacion(LocalDateTime.now());
+        walletRepository.save(walletUsuario); // ✅ GUARDAR EL NUEVO SALDO
+
+        // 7. CREAR Y ASIGNAR VALORES DE LA TRANSACCIÓN
         Transaccion transaccion = new Transaccion();
         transaccion.setUsuario(usuario);
         transaccion.setComercio(comercio);
         transaccion.setMetodoPago(metodoPago);
 
-        // 5. ASIGNAR VALORES CALCULADOS
+        // 8. ASIGNAR VALORES CALCULADOS
         transaccion.setCriptomoneda(criptomoneda);
         transaccion.setTipoCambio(tipoCambio);
         transaccion.setCodigoMoneda(codigoMoneda);
