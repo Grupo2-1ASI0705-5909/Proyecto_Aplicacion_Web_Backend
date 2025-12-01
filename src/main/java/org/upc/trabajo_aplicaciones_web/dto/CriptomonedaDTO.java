@@ -10,8 +10,10 @@ public class CriptomonedaDTO {
     private String nombre;
     private Integer decimales = 8;
     private Boolean activa = true;
+    private BigDecimal precioUSD = BigDecimal.ZERO;
 
-    public CriptomonedaDTO() {}
+    public CriptomonedaDTO() {
+    }
 
     public CriptomonedaDTO(String codigo, String nombre) {
         this.codigo = codigo;

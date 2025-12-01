@@ -27,96 +27,96 @@ import org.springframework.http.HttpMethod;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    @Autowired
-    private org.upc.trabajo_aplicaciones_web.securities.JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+  @Autowired
+  private org.upc.trabajo_aplicaciones_web.securities.JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    @Autowired
-    private UserDetailsService jwtUserDetailsService;
+  @Autowired
+  private UserDetailsService jwtUserDetailsService;
 
-    @Autowired
-    private JwtRequestFilter jwtRequestFilter;
+  @Autowired
+  private JwtRequestFilter jwtRequestFilter;
 
-    @Autowired
-    @Qualifier("handlerExceptionResolver")
-    private HandlerExceptionResolver exceptionResolver;
+  @Autowired
+  @Qualifier("handlerExceptionResolver")
+  private HandlerExceptionResolver exceptionResolver;
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+    throws Exception {
+    return authenticationConfiguration.getAuthenticationManager();
+  }
 
-    @Bean
-    public static PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+  @Bean
+  public static PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(jwtUserDetailsService).passwordEncoder(passwordEncoder());
-    }
+  @Autowired
+  public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
+    auth.userDetailsService(jwtUserDetailsService).passwordEncoder(passwordEncoder());
+  }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) /// modifique esto
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+      .csrf(csrf -> csrf.disable())
+      .cors(cors -> cors.configurationSource(corsConfigurationSource())) /// modifique esto
+      .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      .authorizeHttpRequests(auth -> auth
 
-                        // actualizacion de permisos para swagger
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/api-docs/**",
-                                "/swagger-resources/**",
-                                "/swagger-resources",
-                                "/configuration/ui",
-                                "/configuration/security",
-                                "/webjars/**",
-                                "/v3/api-docs",
-                                "/api-docs"
+        // actualizacion de permisos para swagger
+        .requestMatchers(
+          "/swagger-ui.html",
+          "/swagger-ui/",
+          "/v3/api-docs/",
+          "/api-docs/",
+          "/swagger-resources/",
+          "/swagger-resources",
+          "/configuration/ui",
+          "/configuration/security",
+          "/webjars/",
+          "/v3/api-docs",
+          "/api-docs"
 
-                        ).permitAll()
+        ).permitAll()
 
-                        .requestMatchers("/auth/**", "/login").permitAll()
-                        // .requestMatchers("/api/usuarios").permitAll() // REMOVED: Should be protected
+        .requestMatchers("/auth/", "/login").permitAll()
+        // .requestMatchers("/api/usuarios").permitAll() // REMOVED: Should be protected
 
-                        // Antes tenías: .anyRequest().authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
+        // Antes tenías: .anyRequest().authenticated()
+        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
 
-                        // TEMPORAL: Permitir endpoints de notificaciones (para debugging 401)
-                        .requestMatchers("/api/notificaciones/**").permitAll()
+        // TEMPORAL: Permitir endpoints de notificaciones (para debugging 401)
+        .requestMatchers("/api/notificaciones/").permitAll()
 
-                        // .anyRequest().permitAll()
-                        .anyRequest().authenticated() // modifique esto
-                );
+        // .anyRequest().permitAll()
+        .anyRequest().authenticated() // modifique esto
+      );
 
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+    http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+    return http.build();
+  }
 
-    /// aumente todo esto
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
+  /// aumente todo esto
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. Permitir el origen de tu Frontend (Angular)
-        configuration.setAllowedOrigins(Arrays.asList("https://frontend-grupo6-final-v2.web.app"));
+    // 1. Permitir el origen de tu Frontend (Angular)
+    configuration.setAllowedOrigins(Arrays.asList("https://frontend-grupo6-final-v2.web.app"));
 
-        // 2. Permitir todos los métodos HTTP (GET, POST, PUT, DELETE, etc.)
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+    // 2. Permitir todos los métodos HTTP (GET, POST, PUT, DELETE, etc.)
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-        // 3. Permitir todas las cabeceras (Tokens, Content-Type, etc.)
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "x-auth-token"));
+    // 3. Permitir todas las cabeceras (Tokens, Content-Type, etc.)
+    configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "x-auth-token"));
 
-        configuration.setAllowCredentials(true);
+    configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/", configuration);
+    return source;
+  }
 }

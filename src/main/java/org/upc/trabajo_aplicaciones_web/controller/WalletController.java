@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("/api/wallets")
 @RequiredArgsConstructor
 public class WalletController {
-    //actualizado
+    // actualizado
     private final WalletService walletService;
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")
@@ -83,7 +83,8 @@ public class WalletController {
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
     @GetMapping("/usuario/{usuarioId}/cripto/{criptoId}")
-    public ResponseEntity<WalletDTO> obtenerPorUsuarioYCripto(@PathVariable Long usuarioId, @PathVariable Long criptoId) {
+    public ResponseEntity<WalletDTO> obtenerPorUsuarioYCripto(@PathVariable Long usuarioId,
+            @PathVariable Long criptoId) {
         WalletDTO wallet = walletService.obtenerPorUsuarioYCripto(usuarioId, criptoId);
         return ResponseEntity.ok(wallet);
     }
@@ -93,5 +94,13 @@ public class WalletController {
     public ResponseEntity<BigDecimal> obtenerSaldoTotalUsuario(@PathVariable Long usuarioId) {
         BigDecimal saldoTotal = walletService.obtenerSaldoTotalUsuario(usuarioId);
         return ResponseEntity.ok(saldoTotal);
+    }
+
+    // ✅ NUEVO: Endpoint para obtener patrimonio en USD
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'CLIENTE')")
+    @GetMapping("/patrimonio/{usuarioId}")
+    public ResponseEntity<BigDecimal> obtenerPatrimonio(@PathVariable Long usuarioId) {
+        BigDecimal patrimonio = walletService.calcularPatrimonioUSD(usuarioId);
+        return ResponseEntity.ok(patrimonio);
     }
 }

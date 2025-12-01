@@ -27,6 +27,9 @@ public class Criptomoneda {
     @Column(nullable = false)
     private Boolean activa = true;
 
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal precioUSD = BigDecimal.ZERO;
+
     // RELACIONES
     @OneToMany(mappedBy = "criptomoneda", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Wallet> wallets = new ArrayList<>();

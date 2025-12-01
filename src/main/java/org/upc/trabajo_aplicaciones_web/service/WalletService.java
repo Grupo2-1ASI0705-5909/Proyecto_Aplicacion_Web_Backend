@@ -16,6 +16,7 @@ import org.upc.trabajo_aplicaciones_web.repository.WalletRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +27,7 @@ public class WalletService {
     private final UsuarioRepository usuarioRepository;
     private final CriptomonedaRepository criptomonedaRepository;
 
+    // ✅ MODIFICADO: Crear wallet con dirección automática y saldo 0
     public WalletDTO crear(WalletDTO walletDTO) {
         Usuario usuario = usuarioRepository.findById(walletDTO.getUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -41,12 +43,42 @@ public class WalletService {
         Wallet wallet = new Wallet();
         wallet.setUsuario(usuario);
         wallet.setCriptomoneda(criptomoneda);
-        wallet.setDireccion(walletDTO.getDireccion());
-        wallet.setSaldo(walletDTO.getSaldo() != null ? walletDTO.getSaldo() : BigDecimal.ZERO);
-        wallet.setEstado(walletDTO.getEstado() != null ? walletDTO.getEstado() : true);
+
+        // ✅ GENERAR DIRECCIÓN AUTOMÁTICAMENTE
+        wallet.setDireccion(generarDireccion(criptomoneda));
+
+        // ✅ SALDO SIEMPRE CERO AL CREAR
+        wallet.setSaldo(BigDecimal.ZERO);
+
+        wallet.setEstado(true);
 
         wallet = walletRepository.save(wallet);
         return convertirAWalletDTO(wallet);
+    }
+
+    // ✅ NUEVO MÉTODO: Generar dirección según red
+    private String generarDireccion(Criptomoneda cripto) {
+        String codigo = cripto.getCodigo().toUpperCase();
+        String uuid = UUID.randomUUID().toString().replace("-", ""); // 32 chars
+
+        switch (codigo) {
+            case "BTC":
+                // Bitcoin: 1 + 32 chars base58 (simulado)
+                return "1" + uuid;
+            case "ETH":
+            case "USDT":
+            case "USDC":
+                // Ethereum: 0x + 40 chars hex
+                // UUID tiene 32, necesitamos 8 más. Repetimos el inicio.
+                return "0x" + uuid + uuid.substring(0, 8);
+            case "BNB":
+                // Binance: bnb + 39 chars
+                // UUID tiene 32, necesitamos 7 más.
+                return "bnb" + uuid + uuid.substring(0, 7);
+            default:
+                // Genérico: codigo + _ + uuid
+                return cripto.getCodigo().toLowerCase() + "_" + uuid;
+        }
     }
 
     public List<WalletDTO> obtenerTodos() {
@@ -76,10 +108,17 @@ public class WalletService {
         return convertirAWalletDTO(walletExistente);
     }
 
+    // ✅ MODIFICADO: Validar saldo antes de eliminar
     public void eliminar(Long id) {
-        if (!walletRepository.existsById(id)) {
-            throw new RuntimeException("Wallet no encontrado");
+        Wallet wallet = walletRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Wallet no encontrado"));
+
+        // ✅ VALIDAR SALDO CERO
+        if (wallet.getSaldo().compareTo(BigDecimal.ZERO) > 0) {
+            throw new RuntimeException(
+                    "No se puede eliminar una wallet con saldo positivo. Saldo actual: " + wallet.getSaldo());
         }
+
         walletRepository.deleteById(id);
     }
 
@@ -128,6 +167,22 @@ public class WalletService {
         return saldoTotal != null ? saldoTotal : BigDecimal.ZERO;
     }
 
+    // ✅ NUEVO: Calcular patrimonio en USD
+    public BigDecimal calcularPatrimonioUSD(Long usuarioId) {
+        List<Wallet> wallets = walletRepository.findByUsuarioUsuarioId(usuarioId);
+
+        BigDecimal patrimonioTotal = BigDecimal.ZERO;
+
+        for (Wallet wallet : wallets) {
+            BigDecimal saldoCripto = wallet.getSaldo();
+            BigDecimal precioUSD = wallet.getCriptomoneda().getPrecioUSD();
+            BigDecimal valorUSD = saldoCripto.multiply(precioUSD);
+            patrimonioTotal = patrimonioTotal.add(valorUSD);
+        }
+
+        return patrimonioTotal;
+    }
+
     public List<WalletDTO> obtenerWalletsConSaldoMayorA(BigDecimal saldoMinimo) {
         List<Wallet> wallets = walletRepository.findWalletsConSaldoMayorA(saldoMinimo);
         List<WalletDTO> walletDTOs = new ArrayList<>();
@@ -160,6 +215,7 @@ public class WalletService {
         criptoDTO.setNombre(wallet.getCriptomoneda().getNombre());
         criptoDTO.setDecimales(wallet.getCriptomoneda().getDecimales());
         criptoDTO.setActiva(wallet.getCriptomoneda().getActiva());
+        criptoDTO.setPrecioUSD(wallet.getCriptomoneda().getPrecioUSD()); // ✅ AGREGADO
         dto.setCriptomoneda(criptoDTO);
 
         return dto;
