@@ -64,9 +64,10 @@ public class TransaccionController {
         return ResponseEntity.ok(transacciones);
     }
 
-    @PreAuthorize("hasAnyAuthority('ADMINISTRADOR', 'ROLE_ADMINISTRADOR', 'USUARIO', 'ROLE_USUARIO', 'CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @PostMapping
-    public ResponseEntity<TransaccionDTO> crear(@RequestBody TransaccionDTO transaccionDTO, Authentication authentication) { // <--- Agregamos Authentication
+    public ResponseEntity<TransaccionDTO> crear(@RequestBody TransaccionDTO transaccionDTO,
+            Authentication authentication) { // <--- Agregamos Authentication
 
         // Obtenemos el email del usuario logueado (TOKEN)
         String email = authentication.getName();
@@ -77,7 +78,7 @@ public class TransaccionController {
         return new ResponseEntity<>(nuevaTransaccion, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'USUARIO', 'COMERCIO')")
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<TransaccionDTO>> obtenerPorUsuario(@PathVariable Long usuarioId,
             Authentication authentication) {

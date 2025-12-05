@@ -106,6 +106,7 @@ public class SecurityConfig {
 
     // 1. Permitir el origen de tu Frontend (Angular)
     configuration.setAllowedOrigins(Arrays.asList("https://frontend-grupo6-final-v2.web.app"));
+//    configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
 
     // 2. Permitir todos los métodos HTTP (GET, POST, PUT, DELETE, etc.)
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
@@ -120,3 +121,4 @@ public class SecurityConfig {
     return source;
   }
 }
+

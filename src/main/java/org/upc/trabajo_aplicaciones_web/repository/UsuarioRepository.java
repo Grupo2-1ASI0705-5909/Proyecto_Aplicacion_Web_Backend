@@ -36,4 +36,5 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     // ✅ CAMBIADO: Usar "rol.rolId" en lugar de "roles"
     List<Usuario> findByRolRolId(Long rolId);
+
 }

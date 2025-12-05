@@ -35,8 +35,11 @@ public class TransaccionService {
             throw new RuntimeException("Usuario no encontrado para el email: " + emailUsuario);
         }
 
-        Comercio comercio = comercioRepository.findById(transaccionDTO.getComercioId())
-                .orElseThrow(() -> new RuntimeException("Comercio no encontrado"));
+        Comercio comercio = null;
+        if (transaccionDTO.getComercioId() != null) {
+            comercio = comercioRepository.findById(transaccionDTO.getComercioId())
+                    .orElseThrow(() -> new RuntimeException("Comercio no encontrado"));
+        }
 
         MetodoPago metodoPago = metodoPagoRepository.findById(transaccionDTO.getMetodoPagoId())
                 .orElseThrow(() -> new RuntimeException("Método de pago no encontrado"));
@@ -233,7 +236,7 @@ public class TransaccionService {
         TransaccionDTO dto = new TransaccionDTO();
         dto.setTransaccionId(transaccion.getTransaccionId());
         dto.setUsuarioId(transaccion.getUsuario().getUsuarioId());
-        dto.setComercioId(transaccion.getComercio().getComercioId());
+        dto.setComercioId(transaccion.getComercio() != null ? transaccion.getComercio().getComercioId() : null);
         dto.setMetodoPagoId(transaccion.getMetodoPago().getMetodoPagoId());
         dto.setCodigoMoneda(transaccion.getCodigoMoneda());
         dto.setMontoTotalFiat(transaccion.getMontoTotalFiat());
@@ -250,13 +253,14 @@ public class TransaccionService {
         usuarioDTO.setEmail(transaccion.getUsuario().getEmail());
         dto.setUsuario(usuarioDTO);
 
-        ComercioDTO comercioDTO = new ComercioDTO();
-        comercioDTO.setComercioId(transaccion.getComercio().getComercioId());
-        comercioDTO.setNombreComercial(transaccion.getComercio().getNombreComercial());
-        comercioDTO.setRuc(transaccion.getComercio().getRuc());
-        comercioDTO.setCategoria(transaccion.getComercio().getCategoria());
-        dto.setComercio(comercioDTO);
-
+        if (transaccion.getComercio() != null) {
+            ComercioDTO comercioDTO = new ComercioDTO();
+            comercioDTO.setComercioId(transaccion.getComercio().getComercioId());
+            comercioDTO.setNombreComercial(transaccion.getComercio().getNombreComercial());
+            comercioDTO.setRuc(transaccion.getComercio().getRuc());
+            comercioDTO.setCategoria(transaccion.getComercio().getCategoria());
+            dto.setComercio(comercioDTO);
+        }
         MetodoPagoDTO metodoPagoDTO = new MetodoPagoDTO();
         metodoPagoDTO.setMetodoPagoId(transaccion.getMetodoPago().getMetodoPagoId());
         metodoPagoDTO.setNombre(transaccion.getMetodoPago().getNombre());

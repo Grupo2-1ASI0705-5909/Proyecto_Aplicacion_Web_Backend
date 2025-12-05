@@ -16,8 +16,9 @@ import java.util.List;
 public class ComercioController {
 
     private final ComercioService comercioService;
-    //David Comercio Controller
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+
+    // David Comercio Controller
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COMERCIO')")
     @PostMapping
     public ResponseEntity<ComercioDTO> crear(@RequestBody ComercioDTO comercioDTO) {
         ComercioDTO nuevoComercio = comercioService.crear(comercioDTO);
@@ -59,7 +60,7 @@ public class ComercioController {
         return ResponseEntity.ok(comercios);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'COMERCIO')")
     @GetMapping("/{id}")
     public ResponseEntity<ComercioDTO> obtenerPorId(@PathVariable Long id) {
         ComercioDTO comercio = comercioService.obtenerPorId(id);

@@ -22,7 +22,7 @@ public class Transaccion {
     private Usuario usuario;
 
     @ManyToOne
-    @JoinColumn(name = "comercioid", nullable = false)
+    @JoinColumn(name = "comercioid", nullable = true)
     private Comercio comercio;
 
     @ManyToOne
