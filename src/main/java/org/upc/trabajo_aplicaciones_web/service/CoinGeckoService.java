@@ -105,7 +105,7 @@ public class CoinGeckoService {
 
     /**
      * Actualiza la base de datos con los precios actuales de las criptomonedas
-     * Este método se ejecuta automáticamente cada 30 segundos (configurable)
+     * Este método se ejecuta automáticamente cada 15 minutos (configurable)
      */
     @Scheduled(fixedDelayString = "${coingecko.update.interval}")
     public void actualizarPreciosCriptomonedas() {
